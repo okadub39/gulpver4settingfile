@@ -9,6 +9,7 @@ const config = require('./index').getConfig(ENV);
 const utils = require('./utils');
 
 const webpackConfig = {
+  mode: 'production',
   entry  : utils.createEntry(config.jsEntryPoints, config.srcPath),
   output : {
     publicPath: config.publicPath,
@@ -16,9 +17,6 @@ const webpackConfig = {
     chunkFilename: 'js/[name].js',
   },
   plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(ENV)
-    }),
     new ExtractTextPlugin({
       filename: 'css/[name].css'
     }),
@@ -95,25 +93,13 @@ const webpackConfig = {
     }
   }
 };
-
-
 if (ENV !== 'production') {
   webpackConfig.devtool = 'inline-source-map';
 }
-
 if (ENV === 'local') {
   webpackConfig.watch = true;
 }
-
 if (ENV === 'production') {
-  webpackConfig.plugins.push(
-    new webpack.optimize.UglifyJsPlugin({
-      compress: {
-        warnings : false,
-        dead_code: true
-      }
-    })
-  );
 }
 
 const entryPoints = config.jsEntryPoints;
@@ -125,7 +111,7 @@ if (config.divisionVendor) {
     const entryName = entryPoints[i];
     const chunkName = 'vendor.' + entryName;
     webpackConfig.plugins.push(
-      new webpack.optimize.CommonsChunkPlugin({
+      new webpack.optimization.splitChunks({
         name: chunkName,
         chunks: [entryName],
         minChunks: function (module, count) {
@@ -137,7 +123,7 @@ if (config.divisionVendor) {
   }
 
   webpackConfig.plugins.push(
-    new webpack.optimize.CommonsChunkPlugin({
+    new webpack.optimization.splitChunks({
       name: 'vendor.common',
       chunks: points,
       minChunks: function (module, count) {
@@ -146,15 +132,15 @@ if (config.divisionVendor) {
     })
   );
 } else {
-  webpackConfig.plugins.push(
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
-      chunks: entryPoints,
-      minChunks: function (module, count) {
-        return utils.isNodeModules(module, count)
-      }
-    })
-  );
+//  webpackConfig.plugins.push(
+//    new webpack.optimization.splitChunks({
+//      name: 'vendor',
+//      chunks: [entryPoints],
+//      minChunks: function (module, count) {
+//        return utils.isNodeModules(module, count)
+//      }
+//    })
+//  );
 }
 
 module.exports = webpackConfig;
